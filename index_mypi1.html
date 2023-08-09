@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ethereum Node Control Mypi1</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #007BFF;
+        }
+        form {
+            text-align: center;
+            margin-top: 20px;
+        }
+        label, input, button {
+            display: block;
+            margin: 10px 0;
+        }
+        input {
+            padding: 5px;
+            width: 100%;
+        }
+        button {
+            padding: 10px;
+            background-color: #007BFF;
+            color: #FFF;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            text-align: center;
+        }
+        .error {
+            color: #d9534f;
+        }
+        .success {
+            color: #5cb85c;
+        }
+        .peers {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+        }
+    </style>
+</head>
+<body>
+    <h1>Ethereum Node Control MyPi1</h1>
+
+    <h1>Create Ethereum Account</h1>
+    <form id="accountForm" action="http://192.168.0.25:5000/create_account" method="post">
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <br>
+        <label for="account_password">Account Password:</label>
+        <input type="password" id="account_password" name="account_password" required>
+        <br>
+        <button type="submit">Create Account</button>
+    </form>
+
+    <form id="deleteAccountForm" action="http://192.168.0.25:5000/delete_account" method="post">
+    <h2>Delete Account</h2>
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <br>
+        <button type="submit">Delete Ethereum Account</button>
+    </form>
+
+
+    <!-- Initialize Blockchain Form -->
+    <form id="initBlockchainForm" action="http://192.168.0.25:5000/initialize_blockchain" method="post">
+        <h2>Initialize Blockchain</h2>
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <br>
+        <button type="submit">Initialize Blockchain</button>
+    </form>
+
+
+    <!-- Start Node -->
+    <form id="startNodeForm" action="http://192.168.0.25:5000/start_node" method="post">
+        <h2>Start Node</h2>
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <br>
+        <button type="submit">Start Node</button>
+    </form>
+
+
+    
+    <!-- Stop Node -->
+    <form id="stopNodeForm" action="http://192.168.0.25:5000/stop_node" method="post">
+        <h2>Stop Node</h2>
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <button type="submit">Stop Node</button>
+    </form>
+
+    <!-- Get Node URL -->
+    <form id="getNodeURLForm" action="http://192.168.0.25:5000/get_node_url" method="post">
+        <h2>Get Node URL</h2>
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <button type="submit">Get Node URL</button>
+    </form>
+
+       
+    <!-- Add Peer Form -->
+    <form id="addPeerForm" action="http://192.168.0.25:5000/add_peer" method="post">
+        <h2>Add Peer</h2>
+        <label for="account_name">Account Name:</label>
+        <input type="text" id="account_name" name="account_name" required>
+        <br>
+        <label for="enode_url">Enode URL:</label>
+        <input type="text" id="enode_url" name="enode_url" required>
+        <br>
+        <button type="submit">Add Peer</button>
+    </form>
+
+    <!-- Get Peers -->
+    <div id="getPeers">
+        <h2>Get Peers</h2>
+        <button id="getPeersButton">Get Peers</button>
+        <div class="peers" id="peersList">
+            <!-- Peers list will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Get Ethereum Accounts -->
+    <div id="getAccounts">
+        <h2>Get Ethereum Accounts</h2>
+        <button id="getAccountsButton">Get Accounts</button>
+        <div class="peers" id="accountsList">
+            <!-- Accounts list will be displayed here -->
+        </div>
+    </div>
+
+    <!-- Set Miner Base Form -->
+    <form id="setMinerBaseForm">
+        <h2>Set Miner Base</h2>
+        <label for="miner_base_address">Miner Base Address:</label>
+        <input type="text" id="miner_base_address" name="miner_base_address" required>
+        
+        <button type="submit">Set Miner Base</button>
+    </form>
+
+    <!-- Start Mining -->
+    <div id="startMining">
+        <h2>Start Mining</h2>
+        <button id="startMiningButton">Start Mining</button>
+    </div>
+
+    <!-- Stop Mining -->
+    <div id="stopMining">
+        <h2>Stop Mining</h2>
+        <button id="stopMiningButton">Stop Mining</button>
+    </div>
+
+
+    <div class="message" id="message">
+        <!-- Messages will be displayed here -->
+    </div>
+
+    <script>
+        // Helper function to display messages
+        function showMessage(status, message) {
+            const messageDiv = document.getElementById("message");
+            const newMessage = document.createElement("div");
+            newMessage.className = status === "success" ? "success" : "error";
+            newMessage.textContent = message;
+            messageDiv.appendChild(newMessage);
+            setTimeout(() => messageDiv.removeChild(newMessage), 5000);
+        }
+
+        // Helper function to fetch data from the server
+        async function fetchData(endpoint, method = "GET", data = {}) {
+            try {
+                const response = await fetch(`http://192.168.0.25:5000/${endpoint}`, {
+                    method: method,
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: method === "GET" ? null : JSON.stringify(data)
+                });
+                return await response.json();
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                return { status: "error", message: "An error occurred while fetching data." };
+            }
+        }
+
+
+
+
+        // Get Peers Button Click
+        const getPeersButton = document.getElementById("getPeersButton");
+        const peersList = document.getElementById("peersList");
+        getPeersButton.onclick = async () => {
+            const response = await fetchData("get_peers");
+            if (response.status === "success") {
+                peersList.innerHTML = "";
+                response.peers.forEach(peer => {
+                    const peerInfo = document.createElement("p");
+                    peerInfo.textContent = `Name: ${peer.name}, ID: ${peer.id}, Address: ${peer.address}`;
+                    peersList.appendChild(peerInfo);
+                });
+            } else {
+                showMessage(response.status, response.message);
+            }
+        };
+
+        // Get Ethereum Accounts Button Click
+        const getAccountsButton = document.getElementById("getAccountsButton");
+        const accountsList = document.getElementById("accountsList");
+        getAccountsButton.onclick = async () => {
+            const response = await fetchData("get_accounts");
+            if (response.status === "success") {
+                accountsList.innerHTML = "";
+                response.accounts.forEach(account => {
+                    const accountInfo = document.createElement("p");
+                    accountInfo.textContent = `Account: ${account}`;
+                    accountsList.appendChild(accountInfo);
+                });
+            } else {
+                showMessage(response.status, response.message);
+            }
+        };
+
+        // Set Miner Base Form Submission
+        const setMinerBaseForm = document.getElementById("setMinerBaseForm");
+        setMinerBaseForm.onsubmit = async (e) => {
+            e.preventDefault();
+            const minerBaseAddress = document.getElementById("miner_base_address").value;
+            const formData = { "account_address": minerBaseAddress };
+            const response = await fetchData("set_minerbase", "POST", formData);
+            showMessage(response.status, response.message);
+        };
+
+        // Start Mining Button Click
+        const startMiningButton = document.getElementById("startMiningButton");
+        startMiningButton.onclick = async () => {
+            const response = await fetchData("start_mining");
+            showMessage(response.status, response.message);
+        };
+
+        // Stop Mining Button Click
+        const stopMiningButton = document.getElementById("stopMiningButton");
+        stopMiningButton.onclick = async () => {
+            const response = await fetchData("stop_mining");
+            showMessage(response.status, response.message);
+        };
+
+       
+
+    </script>
+</body>
+</html>
